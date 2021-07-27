@@ -29,7 +29,7 @@ func main() {
 	var prevProcs ([]memory.Process)
 
 	for {
-		now := time.Now()
+		iterationStartTime := time.Now()
 		procs, err := memoryApi.GetAllProcesses()
 		if err != nil {
 			log.Printf("memoryApi.GetAllProcesses(): %e\n", err)
@@ -53,7 +53,7 @@ func main() {
 				}
 			}()
 		}
-		elapsed := time.Since(now).Milliseconds()
+		elapsed := time.Since(iterationStartTime).Milliseconds()
 		fmt.Printf("Cycle took: %dms, len(procs): %d Sleeping for ~~%dms\n", elapsed, len(procs), updateTime-elapsed)
 		time.Sleep(time.Duration(updateTime-elapsed) * time.Millisecond)
 	}
