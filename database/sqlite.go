@@ -32,7 +32,6 @@ func New(basePath string) (Database, error) {
 		return nil, fmt.Errorf("os.Remove(): %w", err)
 	}
 
-	fmt.Println(dbAbsPath)
 	db, err := sql.Open("sqlite3", dbAbsPath)
 	if err != nil {
 		return nil, fmt.Errorf("sql.Open(): %w", err)
