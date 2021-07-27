@@ -19,6 +19,7 @@ type (
 	}
 )
 
+//New creates an instance of the sqlite3 database. (basePath is needed because this will be launched as a service, the relative path might end up in System32)
 func New(basePath string) (Database, error) {
 
 	if _, err := os.Stat(basePath); os.IsNotExist(err) {
@@ -40,7 +41,6 @@ func New(basePath string) (Database, error) {
 	//hardcoded table creation statement (non-production state)
 	sqlStmt := `
 	create table test (id integer not null primary key, date datetime, payload json);
-	delete from test;
 	`
 	_, err = db.Exec(sqlStmt)
 	if err != nil {
