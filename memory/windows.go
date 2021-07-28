@@ -9,7 +9,7 @@ import (
 	"unsafe"
 
 	"github.com/elastic/go-windows"
-	"github.com/samhsu427/winlabs/gowin32"
+	"github.com/winlabs/gowin32"
 	xsyscall "golang.org/x/sys/windows"
 )
 
@@ -64,7 +64,7 @@ func (api *memoryApi) GetAllProcesses() (procs []Process, err error) {
 		if err != nil {
 			return nil, fmt.Errorf("GetProcessImageFileName(): %w", err)
 		}
-		//processName could might some regexpr checks on it
+		//processName might have some regexpr checks on it
 		processName := filepath.Base(processPath)
 
 		//Get session ID from pid
