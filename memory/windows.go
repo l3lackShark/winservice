@@ -47,14 +47,11 @@ func (api *memoryApi) GetAllProcesses() (procs []Process, err error) {
 
 	//iterate over them to get the handle
 	for _, pid := range pids {
-		handle, err := syscall.OpenProcess(
-			syscall.PROCESS_QUERY_INFORMATION,
-			false, pid)
-
-		//close the handle after we're done (this will cause a piling up situation, but will close the handles no matter what. Safety measure.)
+		handle, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION, false, pid)
 		if err != nil {
 			continue
 		}
+		//close the handle after we're done (this will cause a piling up situation, but will close the handles no matter what. Safety measure.)
 		defer func() {
 			if err := syscall.CloseHandle(handle); err != nil {
 				panic(err) //something went wrong horribly
