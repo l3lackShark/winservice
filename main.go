@@ -31,13 +31,12 @@ func main() {
 		iterationStartTime := time.Now()
 		procs, changes, err := memoryApi.GetAllProcessesAndComputeDiff(prevProcs)
 		if err != nil {
-			log.Printf("memoryApi.GetAllProcessesAndComputeDiff(): %e\n", err)
-			continue
+			log.Panicf("memoryApi.GetAllProcessesAndComputeDiff(): %e\n", err) //needs proper handling in production
 		}
-		prevProcs = procs
 
 		//check if there is a difference
 		if len(changes.Clsoed) > 0 || len(changes.New) > 0 {
+			prevProcs = procs
 
 			outJSON, err := json.Marshal(changes)
 			if err != nil {
