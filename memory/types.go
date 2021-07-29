@@ -2,7 +2,7 @@ package memory
 
 import "syscall"
 
-type JSONOut struct {
+type JSONChanges struct {
 	New    []Process `json:"new"`
 	Clsoed []Process `json:"closed"`
 }
