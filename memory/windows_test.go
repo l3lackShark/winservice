@@ -7,9 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetAllProcesses(t *testing.T) {
+func TestGetAllProcessesAndComputeDiff(t *testing.T) {
+	procs := make(map[memory.UniqueProcess]memory.Process)
 	memoryApi := memory.New()
-	_, err := memoryApi.GetAllProcesses()
+	_, _, err := memoryApi.GetAllProcessesAndComputeDiff(procs)
 	assert.NoError(t, err, "Failed to get all processes")
 
 }

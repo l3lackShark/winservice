@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/l3lackShark/winservice/database"
 	"github.com/l3lackShark/winservice/memory"
 )
@@ -26,29 +25,30 @@ func main() {
 	}
 
 	memoryApi := memory.New()
-	var prevProcs ([]memory.Process)
+	var prevProcs (map[memory.UniqueProcess]memory.Process)
 
 	for {
 		iterationStartTime := time.Now()
-		procs, err := memoryApi.GetAllProcesses()
+		procs, out, err := memoryApi.GetAllProcessesAndComputeDiff(prevProcs)
 		if err != nil {
 			log.Printf("memoryApi.GetAllProcesses(): %e\n", err)
 			continue
 		}
-		//if we need a diff in the database, this could see some logic improvements. But for the sake of simplicity, the whole new payload is uploaded everytime there is a change
-		if diff := deep.Equal(prevProcs, procs); diff != nil { //there is a change
-			fmt.Printf("NEW DIFF:\n %s\n", diff)
+
+		//check if there is a difference
+		if len(out.Clsoed) > 0 || len(out.New) > 0 {
 			prevProcs = procs
 
-			out, err := json.Marshal(procs)
+			outJSON, err := json.Marshal(out)
 			if err != nil {
 				log.Printf("json.Marshal(): %e\n", err)
 				continue
 			}
 
+			fmt.Printf("New DIFF:\n %s", string(outJSON))
 			//store the payload in the database (in goroutine to not cause a waitline for the next iteration)
 			go func() {
-				if err := db.SendPayload(out); err != nil {
+				if err := db.SendPayload(outJSON); err != nil {
 					log.Printf("db.SendPayload(out): %e\n", err) //we just log an error in this case, needs proper handling in production
 				}
 			}()

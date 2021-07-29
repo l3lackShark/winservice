@@ -25,7 +25,7 @@ var (
 
 type (
 	MemoryApi interface {
-		GetAllProcesses() (procs []Process, err error)
+		GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]Process) (procs map[UniqueProcess]Process, out JSONOut, err error)
 	}
 	memoryApi struct {
 		wts *gowin32.WTSServer
@@ -37,13 +37,15 @@ func New() MemoryApi {
 }
 
 //GetAllProcesses retrurn an array of all running processes on the system. Map Key: PID
-func (api *memoryApi) GetAllProcesses() (procs []Process, err error) {
+func (api *memoryApi) GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]Process) (procs map[UniqueProcess]Process, out JSONOut, err error) {
 
 	//get the list of all process IDs
 	pids, err := windows.EnumProcesses()
 	if err != nil {
-		return nil, fmt.Errorf("EnumProcesses(): %w", err)
+		return nil, JSONOut{}, fmt.Errorf("EnumProcesses(): %w", err)
 	}
+
+	procs = make(map[UniqueProcess]Process, len(pids))
 
 	//iterate over them to get the handle
 	for _, pid := range pids {
@@ -62,7 +64,7 @@ func (api *memoryApi) GetAllProcesses() (procs []Process, err error) {
 		//processPath, err := queryFullProcessImageName(handle)
 		processPath, err := windows.GetProcessImageFileName(handle)
 		if err != nil {
-			return nil, fmt.Errorf("GetProcessImageFileName(): %w", err)
+			return nil, JSONOut{}, fmt.Errorf("GetProcessImageFileName(): %w", err)
 		}
 		//processName might have some regexpr checks on it
 		processName := filepath.Base(processPath)
@@ -70,12 +72,12 @@ func (api *memoryApi) GetAllProcesses() (procs []Process, err error) {
 		//Get session ID from pid
 		var sessionID uint32
 		if err := xsyscall.ProcessIdToSessionId(pid, &sessionID); err != nil {
-			return nil, fmt.Errorf("ProcessIdToSessionId(): %w", err)
+			return nil, JSONOut{}, fmt.Errorf("ProcessIdToSessionId(): %w", err)
 		}
 
 		processTimes, err := getProcessTimes(handle)
 		if err != nil {
-			return nil, fmt.Errorf("getProcessTimes(): %w", err)
+			return nil, JSONOut{}, fmt.Errorf("getProcessTimes(): %w", err)
 		}
 
 		creationTime := time.Unix(0, processTimes.CreationTime.Nanoseconds()).UTC().Format(time.RFC3339)
@@ -83,7 +85,7 @@ func (api *memoryApi) GetAllProcesses() (procs []Process, err error) {
 		//query the session info
 		sessionInfo, err := api.wts.QuerySessionSesionInfo(uint(sessionID))
 		if err != nil {
-			return nil, fmt.Errorf("QuerySessionSesionInfo(): %w", err)
+			return nil, JSONOut{}, fmt.Errorf("QuerySessionSesionInfo(): %w", err)
 		}
 
 		//get user SID
@@ -96,25 +98,40 @@ func (api *memoryApi) GetAllProcesses() (procs []Process, err error) {
 		default:
 			user, err := user.Lookup(sessionInfo.UserName)
 			if err != nil {
-				return nil, fmt.Errorf("Lookup(): %w", err)
+				return nil, JSONOut{}, fmt.Errorf("Lookup(): %w", err)
 			}
 			userSID = user.Uid
 			sessionUserName = sessionInfo.UserName
 		}
 
-		procs = append(procs,
+		uniqueProc := UniqueProcess{PID: pid, CreationTime: creationTime}
+
+		procs[uniqueProc] =
 			Process{
 				Name:            processName,
 				PID:             pid,
 				MainModulePath:  processPath,
-				StartingTime:    creationTime,
+				CreationTime:    creationTime,
 				SessionID:       sessionID,
 				SessionUserName: sessionUserName,
 				UserSID:         userSID,
 				UserLastLogin:   sessionInfo.LogonTime.UTC().Format(time.RFC3339),
-			})
+			}
+
+		//check if current process exists in the prev iteration
+		if _, exists := oldProcs[uniqueProc]; !exists {
+			out.New = append(out.New, procs[uniqueProc])
+		}
 	}
-	return procs, nil
+
+	//check processes that were closed
+	for k := range oldProcs {
+		if _, exists := procs[k]; !exists {
+			out.Clsoed = append(out.Clsoed, oldProcs[k])
+		}
+	}
+
+	return procs, out, nil
 }
 
 //queryFullProcessImageName returns an abosulte path from the given process handle. https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-queryfullprocessimagenamea
