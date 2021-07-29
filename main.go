@@ -40,14 +40,14 @@ func main() {
 
 			outJSON, err := json.Marshal(changes)
 			if err != nil {
-				log.Panicf("json.Marshal(): %e\n", err)
+				log.Panicf("json.Marshal(): %e\n", err) //needs proper handling in production
 			}
 
 			fmt.Printf("New DIFF:\n %s", string(outJSON))
 			//store the payload in the database (in goroutine to not cause a waitline for the next iteration)
 			go func() {
 				if err := db.SendPayload(outJSON); err != nil {
-					log.Panicf("db.SendPayload(out): %e\n", err) //we just log an error in this case, needs proper handling in production
+					log.Panicf("db.SendPayload(out): %e\n", err) //needs proper handling in production
 				}
 			}()
 		}

@@ -14,14 +14,18 @@ type UniqueProcess struct {
 }
 
 type Process struct {
-	Name            string `json:"name"`
-	PID             uint32 `json:"pid"`
-	MainModulePath  string `json:"mainModulePath"`
-	CreationTime    string `json:"openTime"`
-	SessionID       uint32 `json:"sessionID"`
-	SessionUserName string `json:"sessionUserName"`
-	UserSID         string `json:"sessionUserSID"`
-	UserLastLogin   string `json:"sessionLoginTime"`
+	Name           string `json:"name"`
+	PID            uint32 `json:"pid"`
+	MainModulePath string `json:"mainModulePath"`
+	CreationTime   string `json:"openTime"`
+	User           User   `json:"owningUser"`
+}
+
+type User struct {
+	SessionID uint32 `json:"sessionID"`
+	Name      string `json:"name"`
+	SID       string `json:"sid"`
+	LastLogin string `json:"loginTime"`
 }
 
 type ProcessTime struct {

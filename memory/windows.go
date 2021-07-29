@@ -90,32 +90,34 @@ func (api *memoryApi) GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]P
 
 		//get user SID
 		userSID := ""
-		sessionUserName := ""
+		userName := ""
 		switch sessionID {
 		case localSystemSessionID:
 			userSID = localSystemSID
-			sessionUserName = "LocalSystem"
+			userName = "LocalSystem"
 		default:
 			user, err := user.Lookup(sessionInfo.UserName)
 			if err != nil {
 				return nil, JSONChanges{}, fmt.Errorf("Lookup(): %w", err)
 			}
 			userSID = user.Uid
-			sessionUserName = sessionInfo.UserName
+			userName = sessionInfo.UserName
 		}
 
 		uniqueProc := UniqueProcess{PID: pid, CreationTime: creationTime}
 
 		procs[uniqueProc] =
 			Process{
-				Name:            processName,
-				PID:             pid,
-				MainModulePath:  processPath,
-				CreationTime:    creationTime,
-				SessionID:       sessionID,
-				SessionUserName: sessionUserName,
-				UserSID:         userSID,
-				UserLastLogin:   sessionInfo.LogonTime.UTC().Format(time.RFC3339),
+				Name:           processName,
+				PID:            pid,
+				MainModulePath: processPath,
+				CreationTime:   creationTime,
+				User: User{
+					SessionID: sessionID,
+					Name:      userName,
+					SID:       userSID,
+					LastLogin: sessionInfo.LogonTime.UTC().Format(time.RFC3339),
+				},
 			}
 
 		//check if current process exists in the prev iteration

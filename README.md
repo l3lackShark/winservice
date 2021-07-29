@@ -22,10 +22,12 @@
 	"pid": 7128,
 	"mainModulePath": "\\Device\\HarddiskVolume3\\Windows\\System32\\taskhostw.exe",
 	"openTime": "2021-07-23T08:48:32Z",
-	"sessionID": 1,
-	"sessionUserName": "BlackShark",
-	"sessionUserSID": "S-1-5-21-916415770-2301682324-591716892-1001",
-	"sessionLoginTime": "2021-07-23T08:48:32Z"
+	"owningUser": {
+		"sessionID": 1,
+		"name": "BlackShark",
+		"sid": "S-1-5-21-916415770-2301682324-591716892-1001",
+		"loginTime": "2021-07-23T08:48:32Z"
+	}
 }
 ```
 
