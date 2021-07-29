@@ -34,10 +34,10 @@ func main() {
 			log.Printf("memoryApi.GetAllProcessesAndComputeDiff(): %e\n", err)
 			continue
 		}
+		prevProcs = procs
 
 		//check if there is a difference
 		if len(changes.Clsoed) > 0 || len(changes.New) > 0 {
-			prevProcs = procs
 
 			outJSON, err := json.Marshal(changes)
 			if err != nil {
