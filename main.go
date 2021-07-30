@@ -37,7 +37,7 @@ func main() {
 		}
 
 		//check if there is a difference
-		if len(changes.Clsoed) > 0 || len(changes.New) > 0 {
+		if len(changes.Clsoed)+len(changes.New) > 0 {
 			prevProcs = procs
 
 			outJSON, err := json.Marshal(changes)
