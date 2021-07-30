@@ -27,7 +27,7 @@ func main() {
 	memoryApi := memory.New()
 	var prevProcs (map[memory.UniqueProcess]memory.Process)
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Duration(updateTime) * time.Millisecond)
 
 	for range ticker.C {
 		iterationStartTime := time.Now()
