@@ -29,7 +29,7 @@ func main() {
 
 	ticker := time.NewTicker(time.Duration(updateTime) * time.Millisecond)
 
-	for range ticker.C {
+	for ; true; <-ticker.C {
 		iterationStartTime := time.Now()
 		procs, changes, err := memoryApi.GetAllProcessesAndComputeDiff(prevProcs)
 		if err != nil {
