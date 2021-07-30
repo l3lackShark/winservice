@@ -27,7 +27,9 @@ func main() {
 	memoryApi := memory.New()
 	var prevProcs (map[memory.UniqueProcess]memory.Process)
 
-	for {
+	ticker := time.NewTicker(1 * time.Second)
+
+	for range ticker.C {
 		iterationStartTime := time.Now()
 		procs, changes, err := memoryApi.GetAllProcessesAndComputeDiff(prevProcs)
 		if err != nil {
@@ -52,7 +54,6 @@ func main() {
 			}()
 		}
 		elapsed := time.Since(iterationStartTime).Milliseconds()
-		fmt.Printf("Cycle took: %dms, len(procs): %d Sleeping for ~~%dms\n", elapsed, len(procs), updateTime-elapsed)
-		time.Sleep(time.Duration(updateTime-elapsed) * time.Millisecond)
+		log.Printf("Cycle took: %dms, len(procs): %d New tick in about %dms\n", elapsed, len(procs), updateTime-elapsed)
 	}
 }
