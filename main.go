@@ -25,7 +25,7 @@ func main() {
 	}
 
 	memoryApi := memory.New()
-	var prevProcs (map[memory.UniqueProcess]memory.Process)
+	var prevProcs map[memory.UniqueProcess]memory.Process
 
 	ticker := time.NewTicker(time.Duration(updateTime) * time.Millisecond)
 
