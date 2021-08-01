@@ -1,6 +1,6 @@
 package memory
 
-import "syscall"
+import xsyscall "golang.org/x/sys/windows"
 
 type JSONChanges struct {
 	New    []Process `json:"new"`
@@ -29,8 +29,8 @@ type User struct {
 }
 
 type ProcessTime struct {
-	CreationTime syscall.Filetime
-	ExitTime     syscall.Filetime
-	KernelTime   syscall.Filetime
-	UserTime     syscall.Filetime
+	CreationTime xsyscall.Filetime
+	ExitTime     xsyscall.Filetime
+	KernelTime   xsyscall.Filetime
+	UserTime     xsyscall.Filetime
 }
