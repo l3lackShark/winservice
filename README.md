@@ -2,7 +2,6 @@
 
 * Cgo требуется только из-за базы данных. Всё чтение выполняется на syscall'ах (пакет memory)
 * Запускается через [этот](https://github.com/l3lackShark/winservicerunner) раннер 
-* Используется нативный Device путь вместо WIN32, ибо не все приложения могут быть совместимы с win32(Пример: \\wsl$) Если требуется, путь можно сконвертировать https://stackoverflow.com/a/4446189 
 * При изменении в процессах в базу отправляется JSON объект:
 
 ```json
@@ -20,7 +19,7 @@
 {
 	"name": "taskhostw.exe",
 	"pid": 7128,
-	"mainModulePath": "\\Device\\HarddiskVolume3\\Windows\\System32\\taskhostw.exe",
+	"mainModulePath": "C:\\Windows\\System32\\taskhostw.exe",
 	"openTime": "2021-07-23T08:48:32Z",
 	"owningUser": {
 		"sessionID": 1,

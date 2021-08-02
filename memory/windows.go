@@ -2,9 +2,12 @@ package memory
 
 import (
 	"fmt"
+	"log"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
+	"unicode/utf16"
 	"unsafe"
 
 	"github.com/winlabs/gowin32"
@@ -36,7 +39,10 @@ func New() MemoryApi {
 
 //GetAllProcessesAndComputeDiff takes a map of all processes(can be empty) and returns the new map and changes that happened compared to the oldProcs
 func (api *memoryApi) GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]Process) (procs map[UniqueProcess]Process, changes JSONChanges, err error) {
-
+	logicalDrives, err := getLogicalDrives()
+	if err != nil {
+		return nil, JSONChanges{}, fmt.Errorf("getLogicalDrives(): %w", err)
+	}
 	//get the list of all process IDs
 	pids, err := enumProcesses()
 	if err != nil {
@@ -58,10 +64,20 @@ func (api *memoryApi) GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]P
 			}
 		}()
 
-		//retrieve full executable path on the system. (win32path won't work here since not all processes use win32 paths (stuff like WSL), it's safer to use native Device path and then (if needed) convert it.  e.x.:  \Device\HarddiskVolume3\Windows\cmd.exe)
+		//retrieve full executable path on the system. (win32path won't work here since not all processes use win32 paths (stuff like WSL), it's safer to use native Device path and then convert it.  e.x.:  \Device\HarddiskVolume3\Windows\cmd.exe)
 		processPath, err := queryFullProcessImageName(handle)
 		if err != nil {
 			return nil, JSONChanges{}, fmt.Errorf("GetProcessImageFileName(): %w", err)
+		}
+
+		//this might not be compatible with network drives
+		ntDeviceSpl := strings.Split(processPath, `\`)
+		volName := strings.Join(ntDeviceSpl[:3], `\`)
+
+		if v, exists := logicalDrives[volName]; exists {
+			processPath = strings.Replace(processPath, volName, v, 1)
+		} else {
+			log.Printf("Failed to convert processPath for %s, falling back to nt device path\n", processPath)
 		}
 
 		processName := filepath.Base(processPath)
@@ -154,7 +170,7 @@ func queryFullProcessImageName(handle xsyscall.Handle) (string, error) {
 //getProcessTimes returns winApi times. https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes
 func getProcessTimes(handle xsyscall.Handle) (changes ProcessTime, err error) {
 	if err := xsyscall.GetProcessTimes(handle, &changes.CreationTime, &changes.ExitTime, &changes.KernelTime, &changes.UserTime); err != nil {
-		return ProcessTime{}, err
+		return ProcessTime{}, fmt.Errorf("xsyscall.GetProcessTimes(): %w", err)
 	}
 	return changes, nil
 }
@@ -164,8 +180,50 @@ func enumProcesses() ([]uint32, error) {
 	pids := make([]uint32, 65535)
 	ret := uint32(0)
 	if err := xsyscall.EnumProcesses(pids, &ret); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("xsyscall.EnumProcesses(): %w", err)
 	}
 
 	return pids[:ret/4], nil
+}
+
+//getLogicalDrives utilizes winapi. Key: NT Device string, Value: DOS Drive letter
+func getLogicalDrives() (map[string]string, error) {
+
+	tPathBuf := make([]uint16, 65535)
+
+	//https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getlogicaldrivestringsw
+	x, err := xsyscall.GetLogicalDriveStrings(uint32(len(tPathBuf)), (*uint16)(&tPathBuf[0]))
+	if err != nil {
+		return nil, fmt.Errorf("xsyscall.GetLogicalDriveStrings(): %w", err)
+	}
+	raw := string(utf16.Decode(tPathBuf[:x]))
+
+	spl := strings.Split(string(raw), string(rune(0)))
+	if len(spl) < 1 {
+		return nil, fmt.Errorf("len(spl) < 1")
+	}
+	//cut the last empty string
+	spl = spl[:len(spl)-1]
+
+	logicalDrives := make(map[string]string, len(spl))
+
+	for _, v := range spl {
+		//winapi requires to trim all suffixes
+		v = strings.TrimSuffix(v, `\`)
+		deviceName, err := xsyscall.UTF16PtrFromString(v)
+		if err != nil {
+			return nil, fmt.Errorf("xsyscall.UTF16PtrFromString(): %w", err)
+		}
+
+		targetPath := make([]uint16, 65535)
+		//https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-querydosdevicew
+		r, err := xsyscall.QueryDosDevice(deviceName, (*uint16)(&targetPath[0]), uint32(len(targetPath)))
+		if err != nil {
+			return nil, fmt.Errorf("xsyscall.QueryDosDevice(): %w", err)
+		}
+
+		logicalDrives[string(utf16.Decode(targetPath[:r-2]))] = v //-2 to remove nullterminators
+
+	}
+	return logicalDrives, nil
 }
