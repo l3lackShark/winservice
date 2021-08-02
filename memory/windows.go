@@ -72,8 +72,11 @@ func (api *memoryApi) GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]P
 
 		//this might not be compatible with network drives
 		ntDeviceSpl := strings.Split(processPath, `\`)
-		volName := strings.Join(ntDeviceSpl[:3], `\`)
+		if len(ntDeviceSpl) < 3 {
+			return nil, JSONChanges{}, fmt.Errorf("len(ntDeviceSpl) < 3, processPath: %s", processPath)
+		}
 
+		volName := strings.Join(ntDeviceSpl[:3], `\`)
 		if v, exists := logicalDrives[volName]; exists {
 			processPath = strings.Replace(processPath, volName, v, 1)
 		} else {
