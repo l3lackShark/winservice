@@ -64,7 +64,7 @@ func (api *memoryApi) GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]P
 			}
 		}()
 
-		//retrieve full executable path on the system. (win32path won't work here since not all processes use win32 paths (stuff like WSL), it's safer to use native Device path and then convert it.  e.x.:  \Device\HarddiskVolume3\Windows\cmd.exe)
+		//retrieve full executable path on the system. (win32 dos path won't work here since if the handle is to a process that has exited, dos path will error out, it's safer to use native Device path and then convert it.  e.x.:  \Device\HarddiskVolume3\Windows\cmd.exe)
 		processPath, err := queryFullProcessImageName(handle)
 		if err != nil {
 			return nil, JSONChanges{}, fmt.Errorf("GetProcessImageFileName(): %w", err)
