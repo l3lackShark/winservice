@@ -192,11 +192,11 @@ func getLogicalDrives() (map[string]string, error) {
 	tPathBuf := make([]uint16, 65535)
 
 	//https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getlogicaldrivestringsw
-	x, err := xsyscall.GetLogicalDriveStrings(uint32(len(tPathBuf)), (*uint16)(&tPathBuf[0]))
+	retChars, err := xsyscall.GetLogicalDriveStrings(uint32(len(tPathBuf)), (*uint16)(&tPathBuf[0]))
 	if err != nil {
 		return nil, fmt.Errorf("xsyscall.GetLogicalDriveStrings(): %w", err)
 	}
-	raw := string(utf16.Decode(tPathBuf[:x-1])) //cut the last nullterminator
+	raw := string(utf16.Decode(tPathBuf[:retChars-1])) //cut the last nullterminator
 
 	spl := strings.Split(string(raw), string(rune(0)))
 	if len(spl) < 1 {
@@ -215,12 +215,12 @@ func getLogicalDrives() (map[string]string, error) {
 
 		targetPath := make([]uint16, 65535)
 		//https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-querydosdevicew
-		r, err := xsyscall.QueryDosDevice(deviceName, (*uint16)(&targetPath[0]), uint32(len(targetPath)))
+		retChars, err := xsyscall.QueryDosDevice(deviceName, (*uint16)(&targetPath[0]), uint32(len(targetPath)))
 		if err != nil {
 			return nil, fmt.Errorf("xsyscall.QueryDosDevice(): %w", err)
 		}
 
-		logicalDrives[string(utf16.Decode(targetPath[:r-2]))] = v //-2 to remove nullterminators
+		logicalDrives[string(utf16.Decode(targetPath[:retChars-2]))] = v //-2 to remove nullterminators
 
 	}
 	return logicalDrives, nil
