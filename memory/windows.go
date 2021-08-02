@@ -196,14 +196,12 @@ func getLogicalDrives() (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("xsyscall.GetLogicalDriveStrings(): %w", err)
 	}
-	raw := string(utf16.Decode(tPathBuf[:x]))
+	raw := string(utf16.Decode(tPathBuf[:x-1])) //cut the last nullterminator
 
 	spl := strings.Split(string(raw), string(rune(0)))
 	if len(spl) < 1 {
 		return nil, fmt.Errorf("len(spl) < 1")
 	}
-	//cut the last empty string
-	spl = spl[:len(spl)-1]
 
 	logicalDrives := make(map[string]string, len(spl))
 
