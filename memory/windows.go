@@ -44,7 +44,7 @@ func (api *memoryApi) GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]P
 	}
 
 	procs = make(map[UniqueProcess]Process, len(pids))
-	time.Sleep(5 * time.Second)
+
 	//iterate over them to get the handle
 	for _, pid := range pids {
 		handle, err := xsyscall.OpenProcess(xsyscall.PROCESS_QUERY_INFORMATION, false, pid)
@@ -58,7 +58,7 @@ func (api *memoryApi) GetAllProcessesAndComputeDiff(oldProcs map[UniqueProcess]P
 			}
 		}()
 
-		//retrieve full executable path on the system. (win32path won't work here since not all processes use win32 paths (stuff like WSL), it's safer to use native NT paths and then (if needed) convert it.  e.x.:  \Device\HarddiskVolume3\Windows\cmd.exe)
+		//retrieve full executable path on the system. (win32path won't work here since not all processes use win32 paths (stuff like WSL), it's safer to use native Device path and then (if needed) convert it.  e.x.:  \Device\HarddiskVolume3\Windows\cmd.exe)
 		processPath, err := queryFullProcessImageName(handle)
 		if err != nil {
 			return nil, JSONChanges{}, fmt.Errorf("GetProcessImageFileName(): %w", err)
